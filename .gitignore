@@ -5,6 +5,10 @@
 runs
 tt_submission
 src/user_config.tcl
+src/sim_build
+src/__pycache__/
+src/__tinytapeout
+src/results.xml
 test/sim_build
 test/__pycache__/
 test/results.xml
@@ -13,5 +17,8 @@ test/gate_level_netlist.v
 JUNK
 *.ppm
 gds_render.svg
+gds_render_png24.png
 tt/
 __pycache__
+tt??-env.sh
+*~

@@ -1,8 +1,17 @@
 ![](../../workflows/gds/badge.svg) ![](../../workflows/docs/badge.svg) ![](../../workflows/test/badge.svg) ![](../../workflows/fpga/badge.svg)
 
-# Tiny Tapeout Verilog Project Template
+# raybox-zero for TT07 (Tiny Tapeout 07) - Resubmission updated from TT04
 
-- [Read the documentation for project](docs/info.md)
+This is a resubmission of a very simple ray caster demo (sort of like Wolf3D rendering) driving a VGA display without a framebuffer (i.e. by 'racing the beam').
+
+It was originally submitted to TT04, but due to a synthesis bug in the OpenLane flow, it produced severely glitchy output that I didn't discover until the chips came back from fabrication. Had I run a GL (gate-level) sim back in the day, I probably would've caught it, but maybe not had much I could do about it.
+
+The version of OpenLane that TT07 uses doesn't seem to exhibit the same problem; I've since implemented GL sim, and both been able to prove the TT04 bug, and prove that it is gone in this TT07 version.
+
+For more information:
+- [Read the documentation for this project](docs/info.md)
+- See the main source repo for this project: [algofoogle/raybox-zero]
+
 
 ## What is Tiny Tapeout?
 

@@ -1,31 +1,29 @@
-# Sample testbench for a Tiny Tapeout project
+# `test/`: Files supporting basic cocotb automated tests
 
-This is a sample testbench for a Tiny Tapeout project. It uses [cocotb](https://docs.cocotb.org/en/stable/) to drive the DUT and check the outputs.
-See below to get started or for more information, check the [website](https://tinytapeout.com/hdl/testing/).
+This builds on:
+* https://github.com/algofoogle/tt05-vga-spi-rom/tree/main/src/test
+* https://github.com/algofoogle/tt04-raybox-zero/tree/1.0-test/src/test
+* https://github.com/TinyTapeout/tt07-verilog-template/tree/main/test
 
-## Setting up
+For other background on this, see [0197], [0198], and [0204].
 
-1. Edit [Makefile](Makefile) and modify `PROJECT_SOURCES` to point to your Verilog files.
-2. Edit [tb.v](tb.v) and replace `tt_um_example` with your module name.
+**To actually run the tests,** go into this `test/` directory (i.e. where the `Makefile` is) and run `make -B`.
 
-## How to run
 
-To run the RTL simulation:
+## More information
 
-```sh
-make -B
-```
+[0204] now probably has my most comprehensive notes on how to set up your environment for local hardening and testing. Note that it includes lots of stuff from my original TT04 re-testing, but further down on the page are the additional details that work for this repo and TT07.
 
-To run gatelevel simulation, first harden your project and copy `../runs/wokwi/results/final/verilog/gl/{your_module_name}.v` to `gate_level_netlist.v`.
+If you run `make clean && make -B` it will run the RTL test. These render frames on my machine at about 26 seconds each.
 
-Then run:
+If you run `make clean && make -B GATES=yes` it will run the GL (gate-level) test. These take about 70 seconds per frame.
 
-```sh
-make -B GATES=yes
-```
+Frame output files are `test/rbz_basic_frame-???.ppm`.
 
-## How to view the VCD file
+NOTE: If you change the RTL and want to do GL, remember that you'll need to reharden and then copy `../runs/wokwi/results/final/verilog/gl/tt_um_algofoogle_raybox_zero.v` to `./gate_level_netlist.v`.
 
-```sh
-gtkwave tb.vcd tb.gtkw
-```
+
+[0197]: https://github.com/algofoogle/journal/blob/master/0197-2024-04-02.md
+[0198]: https://github.com/algofoogle/journal/blob/master/0198-2024-04-03.md
+[0204]: https://github.com/algofoogle/journal/blob/master/0204-2024-05-25.md
+

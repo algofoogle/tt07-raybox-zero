@@ -1,40 +1,112 @@
-# SPDX-FileCopyrightText: © 2024 Tiny Tapeout
+# SPDX-FileCopyrightText: © 2024 Anton Maurovic
 # SPDX-License-Identifier: MIT
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.triggers import ClockCycles
+from cocotb.triggers import RisingEdge, Timer, ClockCycles
+import time
 
+CLOCK_PERIOD = 40.0 # ns
+HIGH_RES = None #10.0 # If not None, scale H res by this, and step by CLOCK_PERIOD/HIGH_RES instead of unit clock cycles.
+
+
+# Make sure all bidir pins are configured as outputs
+# (as they should always be, for this design):
+def check_uio_out(dut):
+    assert dut.uio_oe.value == 0b00000011
+
+# This can represent hard-wired stuff:
+def set_default_start_state(dut):
+    dut.ena.value = 1
+    # POV SPI interface inactive:
+    dut.pov_sclk.value = 1
+    dut.pov_mosi.value = 1
+    dut.pov_ss_n.value = 1
+    # REG SPI interface also inactive:
+    dut.reg_sclk.value = 1
+    dut.reg_mosi.value = 1
+    dut.reg_ss_n.value = 1
+    # Enable debug display on-screen:
+    dut.debug.value = 1
+    # Enable demo mode (player position auto-increment):
+    dut.inc_px.value = 0 #1
+    dut.inc_py.value = 1 # tnt's better video sample only has PY incrementing.
+    # Present UNregistered outputs:
+    dut.registered_outputs.value = 0
 
 @cocotb.test()
-async def test_project(dut):
-    dut._log.info("Start")
+async def test_frames(dut):
+    """
+    Generate first video frame and write it to rbz_basic_frames.ppm
+    """
 
-    # Set the clock period to 10 us (100 KHz)
-    clock = Clock(dut.clk, 10, units="us")
-    cocotb.start_soon(clock.start())
+    dut._log.info("Starting test_frames...")
 
-    # Reset
-    dut._log.info("Reset")
-    dut.ena.value = 1
-    dut.ui_in.value = 0
-    dut.uio_in.value = 0
-    dut.rst_n.value = 0
-    await ClockCycles(dut.clk, 10)
+    frame_count = 3 # No. of frames to render.
+    hrange = 800
+    frame_height = 525
+    #vrange = frame_height*frame_count #NOTE: Can multiply this by number of frames desired.
+    vrange = frame_height
+    hres = HIGH_RES or 1
+
+    print("Rendering first full frame...")
+
+    set_default_start_state(dut)
+    # Start with reset released:
     dut.rst_n.value = 1
 
-    dut._log.info("Test project behavior")
+    clk = Clock(dut.clk, CLOCK_PERIOD, units="ns")
+    cocotb.start_soon(clk.start())
 
-    # Set the input values you want to test
-    dut.ui_in.value = 20
-    dut.uio_in.value = 30
+    # Wait 3 clocks...
+    await ClockCycles(dut.clk, 3)
+    check_uio_out(dut)
+    dut._log.info("Assert reset...")
+    # ...then assert reset:
+    dut.rst_n.value = 0
+    # ...and wait another 3 clocks...
+    await ClockCycles(dut.clk, 3)
+    check_uio_out(dut)
+    dut._log.info("Release reset...")
+    # ...then release reset:
+    dut.rst_n.value = 1
 
-    # Wait for one clock cycle to see the output values
+    for frame in range(frame_count):
+        render_start_time = time.time()
+        # Create PPM file to visualise the frame, and write its header:
+        img = open(f"rbz_basic_frame-{frame:03d}.ppm", "w")
+        img.write("P3\n")
+        img.write(f"{int(hrange*hres)} {vrange:d}\n")
+        img.write("255\n")
+
+        for n in range(vrange): # 525 lines * however many frames in frame_count
+            print(f"Rendering line {n} of frame {frame}")
+            for n in range(int(hrange*hres)): # 800 pixel clocks per line.
+                if n % 100 == 0:
+                    print('.', end='')
+                if 'x' in dut.rgb.value.binstr:
+                    # Output is unknown; make it green:
+                    r = 0
+                    g = 255
+                    b = 0
+                else:
+                    rr = dut.rr.value
+                    gg = dut.gg.value
+                    bb = dut.bb.value
+                    hsyncb = 255 if dut.hsync_n.value.binstr=='x' else (0==dut.hsync_n.value)*0b110000
+                    vsyncb = 128 if dut.vsync_n.value.binstr=='x' else (0==dut.vsync_n.value)*0b110000
+                    r = (rr << 6) | hsyncb
+                    g = (gg << 6) | vsyncb
+                    b = (bb << 6)
+                img.write(f"{r} {g} {b}\n")
+                if HIGH_RES is None:
+                    await ClockCycles(dut.clk, 1) 
+                else:
+                    await Timer(CLOCK_PERIOD/hres, units='ns')
+        img.close()
+        render_stop_time = time.time()
+        delta = render_stop_time - render_start_time
+        print(f"[{render_stop_time}: Frame simulated in #{delta} seconds]")
+    print("Waiting 1 more clock, for start of next line...")
     await ClockCycles(dut.clk, 1)
-
-    # The following assersion is just an example of how to check the output values.
-    # Change it to match the actual expected output of your module:
-    assert dut.uo_out.value == 50
-
-    # Keep testing the module by changing the input values, waiting for
-    # one or more clock cycles, and asserting the expected output values.
+    print("DONE")
