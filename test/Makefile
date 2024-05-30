@@ -57,3 +57,11 @@ MODULE = test
 
 # include cocotb's make rules to take care of the simulator setup
 include $(shell cocotb-config --makefiles)/Makefile.sim
+
+clean_frames:
+	rm -rf frames_out/*.ppm
+	rm -rf frames_out/*.png
+
+animate:
+	./animate.sh --
+

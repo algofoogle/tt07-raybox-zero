@@ -12,6 +12,7 @@ For more information:
 - [Read the documentation for this project](docs/info.md)
 - See the main source repo for this project: [algofoogle/raybox-zero]
 
+[algofoogle/raybox-zero]: https://github.com/algofoogle/raybox-zero
 
 ## What is Tiny Tapeout?
 

@@ -5,10 +5,22 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, Timer, ClockCycles
 import time
+from os import environ as env
 
-CLOCK_PERIOD = 40.0 # ns
-HIGH_RES = None #10.0 # If not None, scale H res by this, and step by CLOCK_PERIOD/HIGH_RES instead of unit clock cycles.
+CLOCK_PERIOD    = float(env.get('CLOCK_PERIOD') or 40.0) # Default 40.0 (period of clk oscillator input, in nanoseconds)
+HIGH_RES        = float(env.get('HIGH_RES')) if 'HIGH_RES' in env else None # If not None, scale H res by this, and step by CLOCK_PERIOD/HIGH_RES instead of unit clock cycles.
+FRAMES          = int(env.get('FRAMES') or 3) # Default 3 (total frames to render)
+INC_PX          = int(env.get('INC_PX') or 1) # Default 1 (inc_px on)
+INC_PY          = int(env.get('INC_PY') or 1) # Default 1 (inc_py on)
 
+print(f"""
+Test parameters:
+--- CLOCK_PERIOD={CLOCK_PERIOD}
+--- HIGH_RES={HIGH_RES}
+--- FRAMES={FRAMES}
+--- INC_PX={INC_PX}
+--- INC_PY={INC_PY}
+""")
 
 # Make sure all bidir pins are configured as outputs
 # (as they should always be, for this design):
@@ -29,27 +41,26 @@ def set_default_start_state(dut):
     # Enable debug display on-screen:
     dut.debug.value = 1
     # Enable demo mode (player position auto-increment):
-    dut.inc_px.value = 0 #1
-    dut.inc_py.value = 1 # tnt's better video sample only has PY incrementing.
+    dut.inc_px.value = INC_PX
+    dut.inc_py.value = INC_PY
     # Present UNregistered outputs:
     dut.registered_outputs.value = 0
 
 @cocotb.test()
 async def test_frames(dut):
     """
-    Generate first video frame and write it to rbz_basic_frames.ppm
+    Generate a number of full video frames and write to rbz_basic_frame-###.ppm
     """
 
     dut._log.info("Starting test_frames...")
 
-    frame_count = 3 # No. of frames to render.
+    frame_count = FRAMES # No. of frames to render.
     hrange = 800
     frame_height = 525
-    #vrange = frame_height*frame_count #NOTE: Can multiply this by number of frames desired.
     vrange = frame_height
     hres = HIGH_RES or 1
 
-    print("Rendering first full frame...")
+    print(f"Rendering {frame_count} full frame(s)...")
 
     set_default_start_state(dut)
     # Start with reset released:
@@ -70,11 +81,13 @@ async def test_frames(dut):
     dut._log.info("Release reset...")
     # ...then release reset:
     dut.rst_n.value = 1
+    x_count = 0 # Counts unknown signal values.
+    sample_count = 0 # Total count of pixels or samples.
 
     for frame in range(frame_count):
         render_start_time = time.time()
         # Create PPM file to visualise the frame, and write its header:
-        img = open(f"rbz_basic_frame-{frame:03d}.ppm", "w")
+        img = open(f"frames_out/rbz_basic_frame-{frame:03d}.ppm", "w")
         img.write("P3\n")
         img.write(f"{int(hrange*hres)} {vrange:d}\n")
         img.write("255\n")
@@ -98,6 +111,9 @@ async def test_frames(dut):
                     r = (rr << 6) | hsyncb
                     g = (gg << 6) | vsyncb
                     b = (bb << 6)
+                sample_count += 1
+                if 'x' in (dut.rgb.value.binstr + dut.hsync_n.value.binstr + dut.vsync_n.value.binstr):
+                    x_count += 1
                 img.write(f"{r} {g} {b}\n")
                 if HIGH_RES is None:
                     await ClockCycles(dut.clk, 1) 
@@ -106,7 +122,8 @@ async def test_frames(dut):
         img.close()
         render_stop_time = time.time()
         delta = render_stop_time - render_start_time
-        print(f"[{render_stop_time}: Frame simulated in #{delta} seconds]")
+        print(f"[{render_stop_time}: Frame simulated in {delta} seconds]")
     print("Waiting 1 more clock, for start of next line...")
     await ClockCycles(dut.clk, 1)
-    print("DONE")
+    print(f"DONE: {x_count} out of {sample_count} pixels/samples in an unknown state")
+

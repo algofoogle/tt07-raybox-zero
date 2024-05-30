@@ -22,3 +22,4 @@ tt/
 __pycache__
 tt??-env.sh
 *~
+.*.swp
