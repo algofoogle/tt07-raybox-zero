@@ -44,52 +44,6 @@ module tt_um_algofoogle_raybox_zero (
   wire i_reg = ui_in[6];
   assign uo_out = i_reg ? registered_vga_output : unregistered_vga_output;
 
-`ifdef USE_TOP_WRAPPER
-  top_raybox_zero_fsm top_raybox_zero_fsm(
-    .i_clk      (clk),
-    .i_reset    (~rst_n),
-
-    // VGA output signals:
-    .o_hsync    (hsync_n), //@@@: SMELL: TODO: Check polarity.
-    .o_vsync    (vsync_n), //@@@: SMELL: TODO: Check polarity.
-    .o_rgb      (rgb),
-
-    // SPI slave interface.
-    //NOTE: These are internally synchronised.
-    .i_vec_sclk (ui_in[0]),
-    .i_vec_mosi (ui_in[1]),
-    .i_vec_csb  (ui_in[2]),
-
-    // Alt SPI slave interface for all other general register access.
-    //NOTE: These are internally synchronised.
-    .i_reg_sclk (uio_in[2]),
-    .i_reg_mosi (uio_in[3]),
-    .i_reg_csb  (uio_in[4]),
-
-    // Debug/demo signals:
-    //SMELL: These are NOT internally synchronised. Should they be?
-    // Since they're just for simple demo purposes, and not typically used, I think they're fine as-is:
-    .i_debug_vec_overlay(ui_in[3]),
-    .i_mode     ({1'b1, ui_in[5], ui_in[4]}), // [2]=Generated textures; [1]=inc_py, [0]=inc_px
-
-    // Other outputs:
-    .o_hblank   (uio_out[0]),
-    .o_vblank   (uio_out[1]),
-
-    //@@@: SMELL: TODO: STUFF NOT YET SUPPORTED, or not properly anyway:
-    // .o_tex_csb  (),
-    // .o_tex_sclk (),
-    // .o_tex_oeb0 (),
-    // .o_tex_out0 (),
-    .i_tex_in       (4'b1111),
-    .i_gpout0_sel   (4'd0),
-    .i_gpout1_sel   (4'd0),
-    .i_gpout2_sel   (4'd0),
-    .i_reg_outs_enb (1'b1) // 1 = DISABLE (unregistered outputs).
-  );
-  
-`else
-
   wire [9:0] hpos, vpos;
 
   rbzero rbzero(
@@ -112,7 +66,7 @@ module tt_um_algofoogle_raybox_zero (
     // .o_tex_out0 (o_tex_out0),
     // .o_tex_oeb0 (o_tex_oeb0),
     // .i_tex_in   (i_tex_in), //NOTE: io[3] is unused, currently.
-    .i_tex_in   ( hpos[3:0] ),//4'b1111),
+    .i_tex_in   ( 4'b1111 ), //hpos[3:0]
     
     // Debug/demo signals:
     .i_debug_m  (1'b1), // Map debug overlay
@@ -133,8 +87,6 @@ module tt_um_algofoogle_raybox_zero (
     .vsync_n    (vsync_n), // Unregistered.
     .rgb        (rgb)
   );
-
-`endif
 
   assign uio_oe       = 8'b0000_0011; // 1 = output, 0 = input.
   assign uio_out[7:2] = 6'b0000_00; // Unused.

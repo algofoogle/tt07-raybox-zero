@@ -57,12 +57,12 @@ jobs:
           && tar xzf ../frames.tgz *.png
 
       - name: Store PNGs and MP4
-        uses: actions/upload-artifact@4
+        uses: actions/upload-artifact@v4
         with:
           name: frames-rtl
           path: |
             test/frames_out/frames.mp4
-            test/frames_out/frames.tgz      
+            test/frames_out/frames.tgz
 
       - name: upload vcd
         if: success() || failure()

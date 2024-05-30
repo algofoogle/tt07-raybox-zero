@@ -55,7 +55,7 @@ jobs:
           && tar xzf ../frames.tgz *.png
 
       - name: Store PNGs and MP4
-        uses: actions/upload-artifact@4
+        uses: actions/upload-artifact@v4
         with:
           name: frames-gl
           path: |

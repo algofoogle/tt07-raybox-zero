@@ -75,8 +75,8 @@ async def test_frames(dut):
     dut._log.info("Assert reset...")
     # ...then assert reset:
     dut.rst_n.value = 0
-    # ...and wait another 3 clocks...
-    await ClockCycles(dut.clk, 3)
+    # ...and wait another 10 clocks...
+    await ClockCycles(dut.clk, 10)
     check_uio_out(dut)
     dut._log.info("Release reset...")
     # ...then release reset:

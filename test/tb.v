@@ -6,7 +6,7 @@
 */
 module tb ();
 
-  //NOTE: DON'T write VCD file, because it'd be huge!
+  // //NOTE: DON'T write VCD file, because it'd be huge!
   // // Dump the signals to a VCD file. You can view it with gtkwave.
   // initial begin
   //   $dumpfile("tb.vcd");
@@ -50,7 +50,7 @@ module tb ();
   wire [7:0] uio_oe;      // Bidir IOs: Enable path (active high: 0=input, 1=output).
 
   assign ui_in = {
-    1'b0,
+    1'b0, // Unused.
     registered_outputs,
     inc_py,
     inc_px,
