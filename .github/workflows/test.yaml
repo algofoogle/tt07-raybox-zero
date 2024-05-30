@@ -37,6 +37,33 @@ jobs:
           paths: "test/results.xml"
         if: always()
 
+      - name: Convert output frames from PPMs to MP4
+        shell: bash
+        run: |
+          pwd
+          ls -al
+          cd test
+          ./animate.sh ./frames_out/frames.mp4
+
+      - name: Convert output frames from PPMs to PNGs
+        shell: bash
+        run: >
+          pwd
+          ls -al
+          cd test
+          mkdir frames_out/png
+          /animate.sh ./frames_out/png
+          && cd ./frames_out/png
+          && tar xzf ../frames.tgz *.png
+
+      - name: Store PNGs and MP4
+        uses: actions/upload-artifacts@4
+        with:
+          name: frames-rtl
+          path: |
+            test/frames_out/frames.mp4
+            test/frames_out/frames.tgz      
+
       - name: upload vcd
         if: success() || failure()
         uses: actions/upload-artifact@v4
@@ -45,33 +72,37 @@ jobs:
           path: |
             test/tb.vcd
             test/result.xml
-  prep_frames:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Convert PPMs to MP4
-        shell: bash
-        run: |
-          cd ./test
-          ./animate.sh ./frames_out/frames.mp4
-      - name: Convert PPMs to PNGs
-        shell: bash
-        run: >
-          cd test
-          mkdir frames_out/png
-          /animate.sh ./frames_out/png
-          && cd ./frames_out/png
-          && tar xzf ../frames.tgz *.png
-  store_frames:
-    needs: prep_frames
-    runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    steps:
-      - uses: actions/upload-artifacts@4
-        with:
-          name: frames-rtl
-          path: |
-            test/frames_out/frames.mp4
-            test/frames_out/frames.tgz
+
+  # prep_frames:
+  #   needs: test
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Convert PPMs to MP4
+  #       shell: bash
+  #       run: |
+  #         pwd
+  #         ls -al
+  #         cd test
+  #         ./animate.sh ./frames_out/frames.mp4
+  #     - name: Convert PPMs to PNGs
+  #       shell: bash
+  #       run: >
+  #         cd test
+  #         mkdir frames_out/png
+  #         /animate.sh ./frames_out/png
+  #         && cd ./frames_out/png
+  #         && tar xzf ../frames.tgz *.png
+
+  # store_frames:
+  #   needs: prep_frames
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     pages: write
+  #     id-token: write
+  #   steps:
+  #     - uses: actions/upload-artifacts@4
+  #       with:
+  #         name: frames-rtl
+  #         path: |
+  #           test/frames_out/frames.mp4
+  #           test/frames_out/frames.tgz
