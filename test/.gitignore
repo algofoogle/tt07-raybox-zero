@@ -1,1 +1,2 @@
-frames_out
+frames_out/*
+!frames_out/.keep
