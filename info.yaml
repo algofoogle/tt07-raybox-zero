@@ -15,7 +15,6 @@ project:
   
   # List your project's source files here. Source files must be in ./src and you must list each source file separately, one per line:
   source_files:        
-    - project.v
     - raybox-zero/src/rtl/fixed_point_params.v
     - raybox-zero/src/rtl/helpers.v
     - raybox-zero/src/rtl/rbzero.v
@@ -30,6 +29,8 @@ project:
     - raybox-zero/src/rtl/row_render.v
     - raybox-zero/src/rtl/vga_mux.v
     - raybox-zero/src/rtl/vga_sync.v
+    - raybox-zero/src/rtl/top_raybox_zero_fsm.v
+    - project.v
 
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
 pinout:
@@ -43,15 +44,15 @@ pinout:
   ui[6]: reg
   ui[7]: ''
 
-  # Outputs
-  uo[0]: hsync_n
-  uo[1]: vsync_n
-  uo[2]: blue[0]
-  uo[3]: blue[1]
-  uo[4]: green[0]
-  uo[5]: green[1]
-  uo[6]: red[0]
-  uo[7]: red[1]
+  # Outputs: Tiny VGA PMOD (https://tinytapeout.com/specs/pinouts/#vga-output)
+  uo[0]: red[1]
+  uo[1]: green[1]
+  uo[2]: blue[1]
+  uo[3]: vsync_n
+  uo[4]: red[0]
+  uo[5]: green[0]
+  uo[6]: blue[0]
+  uo[7]: hsync_n
 
   # Bidirectional pins
   uio[0]: o_hblank

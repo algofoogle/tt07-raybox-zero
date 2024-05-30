@@ -20,6 +20,7 @@ PROJECT_SOURCES = \
 	raybox-zero/src/rtl/vga_sync.v				\
 	raybox-zero/src/rtl/wall_tracer.v			\
 	raybox-zero/src/rtl/rbzero.v				\
+	raybox-zero/src/rtl/top_raybox_zero_fsm.v	\
 	project.v
 
 ifneq ($(GATES),yes)

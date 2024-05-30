@@ -31,12 +31,14 @@ module tb ();
   reg reg_mosi;
   reg reg_ss_n;
   // Specific outputs for raybox-zero:
-  wire [5:0] rgb  = uo_out[7:2]; // B=[5:4], G=[3:2], R=[1:0]
-  wire [1:0] rr = rgb[1:0];
-  wire [1:0] gg = rgb[3:2];
-  wire [1:0] bb = rgb[5:4];
-  wire hsync_n    = uo_out[0];
-  wire vsync_n    = uo_out[1];
+  // RrGgBb and H/Vsync pin ordering is per Tiny VGA PMOD
+  // (https://tinytapeout.com/specs/pinouts/#vga-output)
+  wire [1:0] rr = {uo_out[0],uo_out[4]};
+  wire [1:0] gg = {uo_out[1],uo_out[5]};
+  wire [1:0] bb = {uo_out[2],uo_out[6]};
+  wire [5:0] rgb = {rr,gg,bb}; // Just used by cocotb test bench for convenient checks.
+  wire hsync_n    = uo_out[7];
+  wire vsync_n    = uo_out[3];
   wire o_hblank   = uio_out[0];
   wire o_vblank   = uio_out[1];
 
