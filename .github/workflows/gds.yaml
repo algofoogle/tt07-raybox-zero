@@ -43,3 +43,35 @@ jobs:
       id-token: write   # to verify the deployment originates from an appropriate source
     steps:
       - uses: TinyTapeout/tt-gds-action/viewer@tt07
+
+  prep_frames:
+    needs: gl_test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Convert PPMs to MP4
+        shell: bash
+        run: |
+          cd ./test
+          ./animate.sh ./frames_out/frames.mp4
+      - name: Convert PPMs to PNGs
+        shell: bash
+        run: >
+          cd test
+          mkdir frames_out/png
+          /animate.sh ./frames_out/png
+          && cd ./frames_out/png
+          && tar xzf ../frames.tgz *.png
+
+  store_frames:
+    needs: prep_frames
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - uses: actions/upload-artifacts@4
+        with:
+          name: frames-gl
+          path: |
+            test/frames_out/frames.mp4
+            test/frames_out/frames.tgz

@@ -1,7 +1,7 @@
 name: fpga
 
 on:
-  push:
+  #push:
   workflow_dispatch:
 
 jobs:
