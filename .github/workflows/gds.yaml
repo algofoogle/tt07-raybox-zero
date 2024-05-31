@@ -51,16 +51,15 @@ jobs:
 
       - name: Convert output frames from PPMs to PNGs
         shell: bash
-        run: >
+        run: |
           pwd
           ls -al
           cd test
           mkdir frames_out/png
-          /animate.sh ./frames_out/png
-          && cd ./frames_out/png
-          && tar xzf ../frames.tgz *.png
+          /animate.sh ./frames_out/png && cd ./frames_out/png && tar xzf ../frames.tgz *.png
 
       - name: Store PNGs and MP4
+        if: success() || failure()
         uses: actions/upload-artifact@v4
         with:
           name: frames-gl

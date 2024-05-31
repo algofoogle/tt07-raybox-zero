@@ -10,12 +10,12 @@ import re
 
 HIGH_RES        = float(env.get('HIGH_RES')) if 'HIGH_RES' in env else None # If not None, scale H res by this, and step by CLOCK_PERIOD/HIGH_RES instead of unit clock cycles.
 CLOCK_PERIOD    = float(env.get('CLOCK_PERIOD') or 40.0) # Default 40.0 (period of clk oscillator input, in nanoseconds)
-FRAMES          = int(env.get('FRAMES')         or 3) # Default 3 (total frames to render)
-INC_PX          = int(env.get('INC_PX')         or 1) # Default 1 (inc_px on)
-INC_PY          = int(env.get('INC_PY')         or 1) # Default 1 (inc_py on)
-GEN_TEX         = int(env.get('GEN_TEX')        or 0) # Default 0 (use tex ROM; no generated textures)
-DEBUG_VEC       = int(env.get('DEBUG_VEC')      or 1) # Default 1 (show vectors debug)
-REG             = int(env.get('REG')            or 0) # Default 0 (UNregistered outputs)
+FRAMES          =   int(env.get('FRAMES')       or    3) # Default 3 (total frames to render)
+INC_PX          =   int(env.get('INC_PX')       or    1) # Default 1 (inc_px on)
+INC_PY          =   int(env.get('INC_PY')       or    1) # Default 1 (inc_py on)
+GEN_TEX         =   int(env.get('GEN_TEX')      or    0) # Default 0 (use tex ROM; no generated textures)
+DEBUG_VEC       =   int(env.get('DEBUG_VEC')    or    1) # Default 1 (show vectors debug)
+REG             =   int(env.get('REG')          or    0) # Default 0 (UNregistered outputs)
 
 print(f"""
 Test parameters (can be overridden using ENV vars):
@@ -47,15 +47,54 @@ def set_default_start_state(dut):
     dut.reg_sclk.value              = 1
     dut.reg_mosi.value              = 1
     dut.reg_ss_n.value              = 1
-    # Enable debug display on-screen:
+    # Enable debug display on-screen?
     dut.debug.value                 = DEBUG_VEC
-    # Enable demo mode (player position auto-increment):
+    # Enable demo mode(s) (player position auto-increment)?
     dut.inc_px.value                = INC_PX
     dut.inc_py.value                = INC_PY
-    # Use generated textures instead of external texture SPI memory:
+    # Use generated textures instead of external texture SPI memory?
     dut.gen_tex.value               = GEN_TEX
-    # Present UNregistered outputs:
+    # Present registered outputs?
     dut.registered_outputs.value    = REG
+
+
+async def send_spi2_burst(dut, data, bits):
+    if type(data) is int:
+        data = bin(data)
+        data = data[2:].zfill(bits)
+
+    while len(data) > 0:
+        dut.reg_mosi.value = int(data[0])
+        data = data[1:]
+        await Timer(CLOCK_PERIOD*5.0, units='ns')
+        dut.reg_sclk.value = 1 # Rising edge; clock in the bit.
+        await Timer(CLOCK_PERIOD*5.0, units='ns')
+        dut.reg_sclk.value = 0 # Falling edge.
+
+async def send_spi2(dut, cmd, data, what):
+    dut._log.info(f"send_spi2({repr(cmd), repr(data)}) started [{what}]...")
+    # Setup:
+    dut.reg_ss_n.value = 1
+    dut.reg_sclk.value = 0
+    await Timer(CLOCK_PERIOD*5.0, units='ns')
+    # Enable CSb:
+    dut.reg_ss_n.value = 0 # Active low.
+    # Send cmd:
+    await send_spi2_burst(dut, cmd, 4)
+    # Send data:
+    await send_spi2_burst(dut, data, 6)
+    await Timer(CLOCK_PERIOD*5.0, units='ns')
+    # Disable CSb; we're done:
+    dut.reg_ss_n.value = 1
+    await Timer(CLOCK_PERIOD*5.0, units='ns')
+    dut._log.info(f"send_spi2() [{what}] DONE")
+
+# async def send_example_spi2_stuff(dut):
+#     # Send SPI2 ('reg') command 2 (LEAK) and a corresponding value of 13:
+#     await send_spi2(dut, 2, 13)
+#     # Turn on VINF mode:
+#     await send_spi2(dut, 5, '1') # SINGLE bit to send.
+
 
 @cocotb.test()
 async def test_frames(dut):
@@ -98,6 +137,15 @@ async def test_frames(dut):
 
     for frame in range(frame_count):
         render_start_time = time.time()
+
+        if frame == 0:
+            # Set a floor leak for the 2nd frame:
+            # Send SPI2 ('reg') command 2 (LEAK) and a corresponding value of 13:
+            cocotb.start_soon(send_spi2(dut, 2, 13, 'set a LEAK'))
+        elif frame == 1:
+            # Turn on VINF (cmd 5) mode for the 3rd frame:
+            cocotb.start_soon(send_spi2(dut, 5, '1', 'turn on VINF')) # '1' because we have a SINGLE bit to send.
+
         # Create PPM file to visualise the frame, and write its header:
         img = open(f"frames_out/rbz_basic_frame-{frame:03d}.ppm", "w")
         img.write("P3\n")
@@ -144,5 +192,8 @@ async def test_frames(dut):
         print(f"[{render_stop_time}: Frame simulated in {delta} seconds]")
     print("Waiting 1 more clock, for start of next line...")
     await ClockCycles(dut.clk, 1)
+
+    # await toggler
+
     print(f"DONE: Out of {sample_count} pixels/samples, got: {x_count} 'x'; {z_count} 'z'")
 

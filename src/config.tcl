@@ -10,11 +10,11 @@
 
 # Here are some of the variables you may want to change:
 
-set ::env(ROUTING_CORES) 16
+set ::env(ROUTING_CORES) 18
 
 # PL_TARGET_DENSITY - You can increase this if Global Placement fails with error GPL-0302.
 # Users have reported that values up to 0.8 worked well for them.
-set ::env(PL_TARGET_DENSITY) 0.6
+set ::env(PL_TARGET_DENSITY) 0.62
 
 # CLOCK_PERIOD - Increase this in case you are getting setup time violations.
 # The value is in nanoseconds, so 20ns == 50MHz.
