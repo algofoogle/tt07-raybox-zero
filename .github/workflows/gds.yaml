@@ -33,6 +33,8 @@ jobs:
           submodules: recursive
 
       - name: GL test
+        env:
+          FRAMES: 5 # Don't do all 10 frames; it'll take too long via GL
         uses: TinyTapeout/tt-gds-action/gl_test@tt07
 
       - name: Install ffmpeg and ImageMagick
