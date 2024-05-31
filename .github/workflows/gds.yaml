@@ -56,7 +56,7 @@ jobs:
           ls -al
           cd test
           mkdir frames_out/png
-          /animate.sh ./frames_out/png && cd ./frames_out/png && tar xzf ../frames.tgz *.png
+          ./animate.sh ./frames_out/png && cd ./frames_out/png && tar xzf ../frames.tgz *.png
 
       - name: Store PNGs and MP4
         if: success() || failure()
