@@ -10,11 +10,11 @@ import re
 
 HIGH_RES        = float(env.get('HIGH_RES')) if 'HIGH_RES' in env else None # If not None, scale H res by this, and step by CLOCK_PERIOD/HIGH_RES instead of unit clock cycles.
 CLOCK_PERIOD    = float(env.get('CLOCK_PERIOD') or 40.0) # Default 40.0 (period of clk oscillator input, in nanoseconds)
-FRAMES          =   int(env.get('FRAMES')       or    3) # Default 3 (total frames to render)
+FRAMES          =   int(env.get('FRAMES')       or   10) # Default 3 (total frames to render)
 INC_PX          =   int(env.get('INC_PX')       or    1) # Default 1 (inc_px on)
 INC_PY          =   int(env.get('INC_PY')       or    1) # Default 1 (inc_py on)
 GEN_TEX         =   int(env.get('GEN_TEX')      or    0) # Default 0 (use tex ROM; no generated textures)
-DEBUG_VEC       =   int(env.get('DEBUG_VEC')    or    1) # Default 1 (show vectors debug)
+DEBUG_POV       =   int(env.get('DEBUG_POV')    or    1) # Default 1 (show POV vectors debug)
 REG             =   int(env.get('REG')          or    0) # Default 0 (UNregistered outputs)
 
 print(f"""
@@ -25,7 +25,7 @@ Test parameters (can be overridden using ENV vars):
 ---       INC_PX: {INC_PX}
 ---       INC_PY: {INC_PY}
 ---      GEN_TEX: {GEN_TEX}
----    DEBUG_VEC: {DEBUG_VEC}
+---    DEBUG_POV: {DEBUG_POV}
 ---          REG: {REG}
 """)
 
@@ -48,7 +48,7 @@ def set_default_start_state(dut):
     dut.reg_mosi.value              = 1
     dut.reg_ss_n.value              = 1
     # Enable debug display on-screen?
-    dut.debug.value                 = DEBUG_VEC
+    dut.debug.value                 = DEBUG_POV
     # Enable demo mode(s) (player position auto-increment)?
     dut.inc_px.value                = INC_PX
     dut.inc_py.value                = INC_PY
@@ -58,42 +58,73 @@ def set_default_start_state(dut):
     dut.registered_outputs.value    = REG
 
 
-async def send_spi2_burst(dut, data, bits):
-    if type(data) is int:
-        data = bin(data)
-        data = data[2:].zfill(bits)
+class SPI:
+    def __init__(self, dut, interface):
+        self.dut = dut
+        self.interface = interface
+        if interface == 'pov':
+            self.csb = dut.pov_ss_n
+            self.sclk = dut.pov_sclk
+            self.mosi = dut.pov_mosi
+        elif interface == 'reg':
+            self.csb = dut.reg_ss_n
+            self.sclk = dut.reg_sclk
+            self.mosi = dut.reg_mosi
+        else:
+            raise ValueError(f"Invalid interface {repr(interface)}; must be 'pov' or 'reg'")
 
-    while len(data) > 0:
-        dut.reg_mosi.value = int(data[0])
-        data = data[1:]
+    def __repr__(self):
+        return f'SPI({self.interface})'
+    
+    async def txn_start(self):
+        self.csb.value = 1
+        self.sclk.value = 0
         await Timer(CLOCK_PERIOD*5.0, units='ns')
-        dut.reg_sclk.value = 1 # Rising edge; clock in the bit.
+        self.csb.value = 0 # Active low.
+    
+    async def txn_send(self, data, count=None):
+        if type(data) is int:
+            data = bin(data)
+            data = data[2:]
+            if count is None:
+                self.dut._log(f"WARNING: SPI.send_bits() called with int data {data} but no count")
+        
+        if count is not None:
+            data = data.zfill(count)
+
+        while len(data) > 0:
+            self.mosi.value = int(data[0])
+            data = data[1:]
+            await Timer(CLOCK_PERIOD*5.0, units='ns')
+            self.sclk.value = 1 # Rising edge; clock in the bit.
+            await Timer(CLOCK_PERIOD*5.0, units='ns')
+            self.sclk.value = 0 # Falling edge.
+
+    async def txn_stop(self):
         await Timer(CLOCK_PERIOD*5.0, units='ns')
-        dut.reg_sclk.value = 0 # Falling edge.
+        # Disable CSb; we're done:
+        self.csb.value = 1
+        self.sclk.value = 0
+        await Timer(CLOCK_PERIOD*5.0, units='ns')
+    
 
-async def send_spi2(dut, cmd, data, what):
-    dut._log.info(f"send_spi2({repr(cmd), repr(data)}) started [{what}]...")
-    # Setup:
-    dut.reg_ss_n.value = 1
-    dut.reg_sclk.value = 0
-    await Timer(CLOCK_PERIOD*5.0, units='ns')
-    # Enable CSb:
-    dut.reg_ss_n.value = 0 # Active low.
-    # Send cmd:
-    await send_spi2_burst(dut, cmd, 4)
-    # Send data:
-    await send_spi2_burst(dut, data, 6)
-    await Timer(CLOCK_PERIOD*5.0, units='ns')
-    # Disable CSb; we're done:
-    dut.reg_ss_n.value = 1
-    await Timer(CLOCK_PERIOD*5.0, units='ns')
-    dut._log.info(f"send_spi2() [{what}] DONE")
+async def spi_send_reg(dut, cmd, data, what=''):
+    dut._log.info(f"spi_send_reg({repr(cmd)}, {repr(data)}) started [{what}]...")
+    spi = SPI(dut, 'reg')
+    await spi.txn_start()
+    await spi.txn_send(cmd, 4)
+    await spi.txn_send(data, 6)
+    await spi.txn_stop()
+    dut._log.info(f"spi_send_reg() [{what}] DONE")
 
-# async def send_example_spi2_stuff(dut):
-#     # Send SPI2 ('reg') command 2 (LEAK) and a corresponding value of 13:
-#     await send_spi2(dut, 2, 13)
-#     # Turn on VINF mode:
-#     await send_spi2(dut, 5, '1') # SINGLE bit to send.
+
+async def spi_send_pov(dut, data, what=''):
+    dut._log.info(f"spi_send_pov({repr(data)}) started [{what}]...")
+    spi = SPI(dut, 'pov')
+    await spi.txn_start()
+    await spi.txn_send(data, 74)
+    await spi.txn_stop()
+    dut._log.info(f"spi_send_pov() [{what}] DONE")
 
 
 @cocotb.test()
@@ -138,13 +169,59 @@ async def test_frames(dut):
     for frame in range(frame_count):
         render_start_time = time.time()
 
-        if frame == 0:
-            # Set a floor leak for the 2nd frame:
+        nframe = frame + 1
+
+        # --- Tests we do for each frame ---
+        # (NOTE: New states pushed in one frame render in the next,
+        # and this has been accounted for in the design below, hence `nframe`):
+        # Frame index:
+        # 000. Reset frame to initial view (slightly wonky; rayAddend in reset instead of prior vsync)
+        # 001. Default behaviour (typically inc_px/py asserted from initial view)
+        # 002. Default behaviour again
+        # 003. inc_px/py disabled; frame should appear same as #2
+        # 004. New POV loaded
+        # 005. Should be same as #4
+        # 006. inc_px/py reasserted; typically, existing POV should move slightly
+        # 007. LEAK enabled
+        # 008. VINF enabled
+        # 009. LEAK disabled
+
+        # Frame 0 will render as per normal (not really controllable).
+        if nframe in [1,2]:
+            # Frames 1 & 2 will render per typical design behaviour.
+            pass
+
+        elif nframe == 3:
+            # Frame 3 will turn off inc_px/py:
+            dut.inc_px.value = 0
+            dut.inc_py.value = 0
+
+        elif nframe == 4:
+            # Set up a nice view for this frame.
+            cocotb.start_soon(spi_send_pov(dut, '00110100011011100011111011011000000111101110000001000001111111000000011110', 'a nice POV'))
+
+        elif nframe == 5:
+            # Keep the same view as last time.
+            pass
+
+        elif nframe == 6:
+            # Reassert inc_px/py inputs to see if the view moves.
+            dut.inc_px.value = INC_PX
+            dut.inc_py.value = INC_PY
+
+        elif nframe == 7:
+            # Set a floor leak: Send SPI2 ('reg') command 2 (LEAK) and a corresponding value of 13:
+            cocotb.start_soon(spi_send_reg(dut, 2, 13, 'set a LEAK'))
+
+        elif nframe == 8:
+            # Turn on VINF (cmd 5) mode:
+            cocotb.start_soon(spi_send_reg(dut, 5, '1', 'turn on VINF')) # '1' because we have a SINGLE bit to send.
+
+        elif nframe == 9:
+            # Turn off floor leak:
             # Send SPI2 ('reg') command 2 (LEAK) and a corresponding value of 13:
-            cocotb.start_soon(send_spi2(dut, 2, 13, 'set a LEAK'))
-        elif frame == 1:
-            # Turn on VINF (cmd 5) mode for the 3rd frame:
-            cocotb.start_soon(send_spi2(dut, 5, '1', 'turn on VINF')) # '1' because we have a SINGLE bit to send.
+            cocotb.start_soon(spi_send_reg(dut, 2, 0, 'turn off LEAK'))
+
 
         # Create PPM file to visualise the frame, and write its header:
         img = open(f"frames_out/rbz_basic_frame-{frame:03d}.ppm", "w")

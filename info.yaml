@@ -1,9 +1,9 @@
 # Tiny Tapeout project information
 project:
   title:        raybox-zero TT07 edition
-  author:       algofoogle (Anton Maurovic
+  author:       algofoogle (Anton Maurovic)
   discord:      algofoogle
-  description:  TT07 resub of 'simple VGA ray caster game demo' from TT04
+  description:  TT07 improved resub of 'simple VGA ray caster game demo' from TT04
   language:     Verilog
   clock_hz:     25_000_000  # Clock frequency in Hz (or 0 if not applicable)
 
@@ -35,9 +35,9 @@ project:
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
 pinout:
   # Inputs
-  ui[0]: 'SPI in: sclk'
-  ui[1]: 'SPI in: mosi'
-  ui[2]: 'SPI in: ss_n'
+  ui[0]: 'SPI in: pov_sclk'
+  ui[1]: 'SPI in: pov_mosi'
+  ui[2]: 'SPI in: pov_ss_n'
   ui[3]: debug
   ui[4]: inc_px
   ui[5]: inc_py
