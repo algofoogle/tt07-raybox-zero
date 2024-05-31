@@ -48,12 +48,12 @@ case "$1" in
 
     *)
         # Convert PPM sequence to PNG sequence in $1 dir:
-        pushd frames_out
+        # pushd frames_out
         for f in rbz_basic_frame-???.ppm; do
             echo $f
             convert $f "$1"/$f.png
         done
-        popd
+        # popd
         ;;
 esac
 
