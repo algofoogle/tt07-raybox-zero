@@ -4,7 +4,7 @@
  */
 
 `default_nettype none
-`timescale 1ns / 1ps
+// `timescale 1ns / 1ps
 
 module tt_um_algofoogle_raybox_zero (
     input  wire [7:0] ui_in,    // Dedicated inputs
@@ -46,6 +46,9 @@ module tt_um_algofoogle_raybox_zero (
 
   wire [9:0] hpos, vpos;
 
+  wire o_tex_oeb0;
+  wire [3:0] i_tex_in = {1'b0, uio_in[7:5]}; //NOTE: io[3] is unused, currently.
+
   rbzero rbzero(
     .clk        (clk),
     .reset      (~rst_n),
@@ -61,26 +64,25 @@ module tt_um_algofoogle_raybox_zero (
     .i_reg_ss_n (uio_in[4]),
 
     // SPI controller interface for reading SPI flash memory (i.e. textures):
-    // .o_tex_csb  (o_tex_csb),
-    // .o_tex_sclk (o_tex_sclk),
-    // .o_tex_out0 (o_tex_out0),
-    // .o_tex_oeb0 (o_tex_oeb0),
-    // .i_tex_in   (i_tex_in), //NOTE: io[3] is unused, currently.
-    .i_tex_in   ( 4'b1111 ), //hpos[3:0]
+    .o_tex_csb  (uio_out[0]),
+    .o_tex_sclk (uio_out[1]),
+    .o_tex_out0 (uio_out[5]),
+    .o_tex_oeb0 (o_tex_oeb0), // Direction control for io[0] (WARNING: OEb, not OE).
+    .i_tex_in   (i_tex_in), //NOTE: io[3] is unused, currently.
     
     // Debug/demo signals:
-    .i_debug_m  (1'b1), // Map debug overlay
+    .i_debug_m  (1'b0), // Map debug overlay
     .i_debug_t  (1'b0), // Trace debug overlay
     .i_debug_v  (ui_in[3]), // Vectors debug overlay
     .i_inc_px   (ui_in[4]),
     .i_inc_py   (ui_in[5]),
-    .i_gen_tex  (1'b1), // 1=Use bitwise-generated textures instead of SPI texture memory.
+    .i_gen_tex  (ui_in[7]), // 1=Use bitwise-generated textures instead of SPI texture memory.
     // .o_vinf     (vinf),
     // .o_hmax     (hmax),
     // .o_vmax     (vmax),
     // VGA outputs:
-    .o_hblank   (uio_out[0]),
-    .o_vblank   (uio_out[1]),
+    // .o_hblank   (uio_out[0]),
+    // .o_vblank   (uio_out[1]),
     .hpos       (hpos),
     .vpos       (vpos),
     .hsync_n    (hsync_n), // Unregistered.
@@ -88,7 +90,18 @@ module tt_um_algofoogle_raybox_zero (
     .rgb        (rgb)
   );
 
-  assign uio_oe       = 8'b0000_0011; // 1 = output, 0 = input.
-  assign uio_out[7:2] = 6'b0000_00; // Unused.
+  assign uio_oe = { // 1 = output, 0 = input.
+    1'b0,       // uio[7]: tex_io2        input.
+    1'b0,       // uio[6]: tex_io1        input.
+    ~o_tex_oeb0,// uio[5]: tex_io0        BIDIRECTIONAL. Inverted; rbzero gives OEb, need OE.
+    1'b0,       // uio[4]: SPI2 reg_ss_n  input.
+    1'b0,       // uio[3]: SPI2 reg_mosi  input.
+    1'b0,       // uio[2]: SPI2 reg_sclk  input.
+    1'b1,       // uio[1]: tex_sclk       OUTPUT.
+    1'b1        // uio[0]: tex_csb        OUTPUT.
+  };
+  // Unused uio output paths:
+  assign uio_out[7:6] = 2'b00; 
+  assign uio_out[4:2] = 3'b000;
 
 endmodule

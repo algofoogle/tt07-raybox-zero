@@ -6,7 +6,7 @@
 */
 module tb ();
 
-  // //NOTE: DON'T write VCD file, because it'd be huge!
+  //NOTE: DON'T write VCD file, because it'd be huge!
   // // Dump the signals to a VCD file. You can view it with gtkwave.
   // initial begin
   //   $dumpfile("tb.vcd");
@@ -27,6 +27,7 @@ module tb ();
   reg inc_px;
   reg inc_py;
   reg registered_outputs; // aka just 'reg'
+  reg gen_tex;
   reg reg_sclk;
   reg reg_mosi;
   reg reg_ss_n;
@@ -39,8 +40,10 @@ module tb ();
   wire [5:0] rgb = {rr,gg,bb}; // Just used by cocotb test bench for convenient checks.
   wire hsync_n    = uo_out[7];
   wire vsync_n    = uo_out[3];
-  wire o_hblank   = uio_out[0];
-  wire o_vblank   = uio_out[1];
+  //wire o_hblank   = uio_out[0];
+  //wire o_vblank   = uio_out[1];
+  wire tex_csb    = uio_out[0];
+  wire tex_sclk   = uio_out[1];
 
   // --- DUT's generic IOs from the TT wrapper ---
   wire [7:0] ui_in;       // Dedicated inputs
@@ -50,7 +53,7 @@ module tb ();
   wire [7:0] uio_oe;      // Bidir IOs: Enable path (active high: 0=input, 1=output).
 
   assign ui_in = {
-    1'b0, // Unused.
+    gen_tex,
     registered_outputs,
     inc_py,
     inc_px,
@@ -61,12 +64,18 @@ module tb ();
   };
 
   assign uio_in = {
-    3'b000,
+    tex_io, // [2:0]
     reg_ss_n,
     reg_mosi,
     reg_sclk,
-    2'b00
+    2'b00 // Unused (outputs only).
   };
+
+  wire [2:0] tex_io;
+
+  assign tex_io[0] =
+    (uio_oe[5] == 1)  ? uio_out[5]  // raybox-zero is asserting an output.
+                      : 1'bz;       // raybox-zero is reading (or not using).
 
   tt_um_algofoogle_raybox_zero user_project (
 
@@ -85,5 +94,16 @@ module tb ();
       .clk    (clk),      // clock
       .rst_n  (rst_n)     // not reset
   );
+
+  // Connect our relevant TT pins to our texture SPI flash ROM:
+  W25Q128JVxIM texture_rom(
+      .DIO    (tex_io[0]),    // SPI io0 (MOSI) - BIDIRECTIONAL
+      .DO     (tex_io[1]),    // SPI io1 (MISO)
+      .WPn    (tex_io[2]),    // SPI io2
+      //.HOLDn  (1'b1),       // SPI io3. //NOTE: Not used in raybox-zero.
+      .CSn    (uio_out[0]),   // SPI /CS
+      .CLK    (uio_out[1])    // SPI SCLK
+  );
+
 
 endmodule

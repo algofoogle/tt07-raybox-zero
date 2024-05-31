@@ -8,7 +8,7 @@ project:
   clock_hz:     25_000_000  # Clock frequency in Hz (or 0 if not applicable)
 
   # How many tiles your design occupies? A single tile is about 167x108 uM.
-  tiles: "4x2"          # Valid values: 1x1, 1x2, 2x2, 3x2, 4x2, 6x2 or 8x2
+  tiles: "8x2"          # Valid values: 1x1, 1x2, 2x2, 3x2, 4x2, 6x2 or 8x2
 
   # Your top module name must start with "tt_um_". Make it unique by including your github username:
   top_module:  "tt_um_algofoogle_raybox_zero"
@@ -42,7 +42,7 @@ pinout:
   ui[4]: inc_px
   ui[5]: inc_py
   ui[6]: reg
-  ui[7]: ''
+  ui[7]: gen_tex
 
   # Outputs: Tiny VGA PMOD (https://tinytapeout.com/specs/pinouts/#vga-output)
   uo[0]: red[1]
@@ -55,14 +55,14 @@ pinout:
   uo[7]: hsync_n
 
   # Bidirectional pins
-  uio[0]: o_hblank
-  uio[1]: o_vblank
-  uio[2]: 'SPI2 in: reg_sclk'
-  uio[3]: 'SPI2 in: reg_mosi'
-  uio[4]: 'SPI2 in: reg_ss_n'
-  uio[5]: ''
-  uio[6]: ''
-  uio[7]: ''
+  uio[0]: 'Out: tex_csb'
+  uio[1]: 'Out: tex_sclk'
+  uio[2]: 'In: "SPI2" reg_sclk'
+  uio[3]: 'In: "SPI2" reg_mosi'
+  uio[4]: 'In: "SPI2" reg_ss_n'
+  uio[5]: 'I/O: tex_io0'
+  uio[6]: 'In: tex_io1'
+  uio[7]: 'In: tex_io2'
 
 # Do not change!
 yaml_version: 6

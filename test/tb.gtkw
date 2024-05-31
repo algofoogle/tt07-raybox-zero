@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
-[*] Thu May 30 20:24:33 2024
+[*] Fri May 31 02:22:21 2024
 [*]
 [dumpfile] "/home/anton/projects/tt07-raybox-zero/test/tb.vcd"
-[dumpfile_mtime] "Thu May 30 20:23:19 2024"
-[dumpfile_size] 274613664
+[dumpfile_mtime] "Fri May 31 02:21:27 2024"
+[dumpfile_size] 174681688
 [savefile] "/home/anton/projects/tt07-raybox-zero/test/tb.gtkw"
 [timestart] 0
 [size] 2490 1226
-[pos] -51 -51
-*-25.000000 118201000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] -1 -1
+*-23.000000 24481000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 311
 [signals_width] 246
 [sst_expanded] 1
@@ -23,8 +23,6 @@ tb.gg[1:0]
 tb.hsync_n
 tb.inc_px
 tb.inc_py
-tb.o_hblank
-tb.o_vblank
 tb.pov_mosi
 tb.pov_sclk
 tb.pov_ss_n
@@ -45,5 +43,8 @@ tb.uio_out[7:0]
 tb.uo_out[7:0]
 @28
 tb.vsync_n
+tb.tex_csb
+tb.tex_io[2:0]
+tb.tex_sclk
 [pattern_trace] 1
 [pattern_trace] 0

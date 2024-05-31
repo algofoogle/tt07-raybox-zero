@@ -35,6 +35,12 @@ jobs:
       - name: GL test
         uses: TinyTapeout/tt-gds-action/gl_test@tt07
 
+      - name: Install ffmpeg and ImageMagick
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: ffmpeg imagemagick
+          version: tt07 # I think naming a version builds a reusable packages cache for that name.
+
       - name: Convert output frames from PPMs to MP4
         shell: bash
         run: |
