@@ -20,6 +20,7 @@ PROJECT_SOURCES = \
 	raybox-zero/src/rtl/vga_sync.v				\
 	raybox-zero/src/rtl/wall_tracer.v			\
 	raybox-zero/src/rtl/rbzero.v				\
+	raybox-zero/src/rtl/top_raybox_zero_fsm.v	\
 	project.v
 
 ifneq ($(GATES),yes)
@@ -48,8 +49,11 @@ VERILOG_SOURCES += $(PWD)/gate_level_netlist.v
 
 endif
 
+# Include the simulated SPI texture ROM:
+VERILOG_SOURCES += $(PWD)/texture_rom/W25Q128JVxIM.v
 # Include the testbench sources:
 VERILOG_SOURCES += $(PWD)/tb.v 
+
 TOPLEVEL = tb
 
 # MODULE is the basename of the Python test file
@@ -64,4 +68,7 @@ clean_frames:
 
 animate:
 	./animate.sh --
+
+wave:
+	gtkwave tb.vcd tb.gtkw
 

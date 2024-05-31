@@ -33,7 +33,15 @@ jobs:
           submodules: recursive
 
       - name: GL test
+        env:
+          FRAMES: 5 # Don't do all 10 frames; it'll take too long via GL
         uses: TinyTapeout/tt-gds-action/gl_test@tt07
+
+      - name: Install ffmpeg and ImageMagick
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: ffmpeg imagemagick
+          version: tt07 # I think naming a version builds a reusable packages cache for that name.
 
       - name: Convert output frames from PPMs to MP4
         shell: bash
@@ -45,17 +53,17 @@ jobs:
 
       - name: Convert output frames from PPMs to PNGs
         shell: bash
-        run: >
+        run: |
           pwd
           ls -al
           cd test
           mkdir frames_out/png
-          /animate.sh ./frames_out/png
-          && cd ./frames_out/png
-          && tar xzf ../frames.tgz *.png
+          cd frames_out
+          ../animate.sh png && cd png && tar czf ../frames.tgz *.png
 
       - name: Store PNGs and MP4
-        uses: actions/upload-artifacts@4
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
         with:
           name: frames-gl
           path: |

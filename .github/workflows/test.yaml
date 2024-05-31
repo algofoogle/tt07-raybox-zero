@@ -37,6 +37,12 @@ jobs:
           paths: "test/results.xml"
         if: always()
 
+      - name: Install ffmpeg and ImageMagick
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: ffmpeg imagemagick
+          version: tt07 # I think naming a version builds a reusable packages cache for that name.
+
       - name: Convert output frames from PPMs to MP4
         shell: bash
         run: |
@@ -47,22 +53,22 @@ jobs:
 
       - name: Convert output frames from PPMs to PNGs
         shell: bash
-        run: >
+        run: |
           pwd
           ls -al
           cd test
           mkdir frames_out/png
-          /animate.sh ./frames_out/png
-          && cd ./frames_out/png
-          && tar xzf ../frames.tgz *.png
+          cd frames_out
+          ../animate.sh png && cd png && tar czf ../frames.tgz *.png
 
       - name: Store PNGs and MP4
-        uses: actions/upload-artifacts@4
+        if: success() || failure()
+        uses: actions/upload-artifact@v4
         with:
           name: frames-rtl
           path: |
             test/frames_out/frames.mp4
-            test/frames_out/frames.tgz      
+            test/frames_out/frames.tgz
 
       - name: upload vcd
         if: success() || failure()
