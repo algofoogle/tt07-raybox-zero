@@ -1,0 +1,5 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "TinyTapeout_PMOD")(type "KiCad")(uri "/home/anton/projects/tt07-raybox-zero/pcb/kicad-tinytapeout-pmod-lib/TinyTapeout_PMOD.pretty")(options "")(descr ""))
+  (lib (name "Anton Kicad Footprints Lib")(type "KiCad")(uri "/home/anton/projects/tt07-raybox-zero/pcb/Anton Kicad Footprints Lib.pretty")(options "")(descr ""))
+)

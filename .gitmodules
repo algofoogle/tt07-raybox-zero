@@ -1,3 +1,6 @@
 [submodule "src/raybox-zero"]
 	path = src/raybox-zero
 	url = git@github.com:algofoogle/raybox-zero
+[submodule "pcb/kicad-tinytapeout-pmod-lib"]
+	path = pcb/kicad-tinytapeout-pmod-lib
+	url = https://github.com/TinyTapeout/kicad-tinytapeout-pmod-lib
