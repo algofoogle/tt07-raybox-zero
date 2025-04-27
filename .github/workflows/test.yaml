@@ -2,7 +2,7 @@ name: test
 on: [push, workflow_dispatch]
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -81,7 +81,7 @@ jobs:
 
   # prep_frames:
   #   needs: test
-  #   runs-on: ubuntu-latest
+  #   runs-on: ubuntu-22.04
   #   steps:
   #     - name: Convert PPMs to MP4
   #       shell: bash
@@ -101,7 +101,7 @@ jobs:
 
   # store_frames:
   #   needs: prep_frames
-  #   runs-on: ubuntu-latest
+  #   runs-on: ubuntu-22.04
   #   permissions:
   #     pages: write
   #     id-token: write
